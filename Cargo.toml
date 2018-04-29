@@ -1,0 +1,7 @@
+[package]
+name = "cgmath-intersect"
+version = "0.1.0"
+authors = ["germän gômez <germangb42@gmail.com>"]
+
+[dependencies]
+cgmath = "0.16"
