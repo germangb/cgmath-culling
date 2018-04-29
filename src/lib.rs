@@ -6,7 +6,7 @@ use cgmath::{BaseFloat, Matrix4, Vector3, Vector4, prelude::*};
 
 use glue::Matrix4Glue;
 
-pub mod glue {
+mod glue {
     pub trait Matrix4Glue<S> {
         fn m00(&self) -> S;
         fn m01(&self) -> S;
