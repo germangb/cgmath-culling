@@ -2,14 +2,49 @@ extern crate cgmath;
 
 use std::mem;
 
-use cgmath::{
-    BaseFloat,
-    Matrix4,
-    Vector3,
-    Vector4,
-    
-    prelude::*,
-};
+use cgmath::{BaseFloat, Matrix4, Vector3, Vector4, prelude::*};
+
+use glue::Matrix4Glue;
+
+pub mod glue {
+    pub trait Matrix4Glue<S> {
+        fn m00(&self) -> S;
+        fn m01(&self) -> S;
+        fn m02(&self) -> S;
+        fn m03(&self) -> S;
+        fn m10(&self) -> S;
+        fn m11(&self) -> S;
+        fn m12(&self) -> S;
+        fn m13(&self) -> S;
+        fn m20(&self) -> S;
+        fn m21(&self) -> S;
+        fn m22(&self) -> S;
+        fn m23(&self) -> S;
+        fn m30(&self) -> S;
+        fn m31(&self) -> S;
+        fn m32(&self) -> S;
+        fn m33(&self) -> S;
+    }
+
+    impl<S: ::cgmath::BaseFloat> Matrix4Glue<S> for ::cgmath::Matrix4<S> {
+        #[inline(always)] fn m00(&self) -> S { self.x.x }
+        #[inline(always)] fn m01(&self) -> S { self.x.y }
+        #[inline(always)] fn m02(&self) -> S { self.x.z }
+        #[inline(always)] fn m03(&self) -> S { self.x.w }
+        #[inline(always)] fn m10(&self) -> S { self.y.x }
+        #[inline(always)] fn m11(&self) -> S { self.y.y }
+        #[inline(always)] fn m12(&self) -> S { self.y.z }
+        #[inline(always)] fn m13(&self) -> S { self.y.w }
+        #[inline(always)] fn m20(&self) -> S { self.z.x }
+        #[inline(always)] fn m21(&self) -> S { self.z.y }
+        #[inline(always)] fn m22(&self) -> S { self.z.z }
+        #[inline(always)] fn m23(&self) -> S { self.z.w }
+        #[inline(always)] fn m30(&self) -> S { self.w.x }
+        #[inline(always)] fn m31(&self) -> S { self.w.y }
+        #[inline(always)] fn m32(&self) -> S { self.w.z }
+        #[inline(always)] fn m33(&self) -> S { self.w.w }
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FrustumIntersection<S> {
@@ -61,7 +96,78 @@ impl<S: BaseFloat> FrustumIntersection<S> {
     /// If this FrustumIntersection will be used to test spheres, you can indicate so with
     /// the `allow_test_spheres` parameter
     pub fn update(&mut self, m: Matrix4<S>, allow_test_spheres: bool) {
-        unimplemented!()
+        self.nxX = m.m03() + m.m00();
+        self.nxY = m.m13() + m.m10();
+        self.nxZ = m.m23() + m.m20();
+        self.nxW = m.m33() + m.m30();
+        if (allow_test_spheres) {
+            let invl =
+                (self.nxX * self.nxX + self.nxY * self.nxY + self.nxZ * self.nxZ).sqrt().recip();
+            self.nxX *= invl;
+            self.nxY *= invl;
+            self.nxZ *= invl;
+            self.nxW *= invl;
+        }
+        self.pxX = m.m03() - m.m00();
+        self.pxY = m.m13() - m.m10();
+        self.pxZ = m.m23() - m.m20();
+        self.pxW = m.m33() - m.m30();
+        if (allow_test_spheres) {
+            let invl =
+                (self.pxX * self.pxX + self.pxY * self.pxY + self.pxZ * self.pxZ).sqrt().recip();
+            self.pxX *= invl;
+            self.pxY *= invl;
+            self.pxZ *= invl;
+            self.pxW *= invl;
+        }
+        self.nyX = m.m03() + m.m01();
+        self.nyY = m.m13() + m.m11();
+        self.nyZ = m.m23() + m.m21();
+        self.nyW = m.m33() + m.m31();
+        if (allow_test_spheres) {
+            let invl =
+                (self.nyX * self.nyX + self.nyY * self.nyY + self.nyZ * self.nyZ).sqrt().recip();
+            self.nyX *= invl;
+            self.nyY *= invl;
+            self.nyZ *= invl;
+            self.nyW *= invl;
+        }
+        self.pyX = m.m03() - m.m01();
+        self.pyY = m.m13() - m.m11();
+        self.pyZ = m.m23() - m.m21();
+        self.pyW = m.m33() - m.m31();
+        if (allow_test_spheres) {
+            let invl =
+                (self.pyX * self.pyX + self.pyY * self.pyY + self.pyZ * self.pyZ).sqrt().recip();
+            self.pyX *= invl;
+            self.pyY *= invl;
+            self.pyZ *= invl;
+            self.pyW *= invl;
+        }
+        self.nzX = m.m03() + m.m02();
+        self.nzY = m.m13() + m.m12();
+        self.nzZ = m.m23() + m.m22();
+        self.nzW = m.m33() + m.m32();
+        if (allow_test_spheres) {
+            let invl =
+                (self.nzX * self.nzX + self.nzY * self.nzY + self.nzZ * self.nzZ).sqrt().recip();
+            self.nzX *= invl;
+            self.nzY *= invl;
+            self.nzZ *= invl;
+            self.nzW *= invl;
+        }
+        self.pzX = m.m03() - m.m02();
+        self.pzY = m.m13() - m.m12();
+        self.pzZ = m.m23() - m.m22();
+        self.pzW = m.m33() - m.m32();
+        if (allow_test_spheres) {
+            let invl =
+                (self.pzX * self.pzX + self.pzY * self.pzY + self.pzZ * self.pzZ).sqrt().recip();
+            self.pzX *= invl;
+            self.pzY *= invl;
+            self.pzZ *= invl;
+            self.pzW *= invl;
+        }
     }
 
     /// Test wether a 3D point lies inside of the frustum
@@ -93,12 +199,79 @@ impl<S: BaseFloat> FrustumIntersection<S> {
     /// This method won't distinguish between partial or total intersection. In order to obtain
     /// this information, use the `intersect_aab` method instead.
     pub fn test_aab(&self, min: Vector3<S>, max: Vector3<S>) -> bool {
-       self.nxX * if self.nxX < S::zero() { min.x } else { max.x } + self.nxY * if self.nxY < S::zero() { min.y } else { max.y }  + self.nxZ * if self.nxZ < S::zero() { min.z } else { max.z }  >= -self.nxW
-           && self.pxX * if self.pxX < S::zero() { min.x } else { max.x } + self.pxY * if self.pxY < S::zero() { min.y } else { max.y }  + self.pxZ * if self.pxZ < S::zero() { min.z } else { max.z }  >= -self.pxW
-           && self.nyX * if self.nyX < S::zero() { min.x } else { max.x } + self.nyY * if self.nyY < S::zero() { min.y } else { max.y }  + self.nyZ * if self.nyZ < S::zero() { min.z } else { max.z }  >= -self.nyW
-           && self.pyX * if self.pyX < S::zero() { min.x } else { max.x } + self.pyY * if self.pyY < S::zero() { min.y } else { max.y }  + self.pyZ * if self.pyZ < S::zero() { min.z } else { max.z }  >= -self.pyW
-           && self.nzX * if self.nzX < S::zero() { min.x } else { max.x } + self.nzY * if self.nzY < S::zero() { min.y } else { max.y }  + self.nzZ * if self.nzZ < S::zero() { min.z } else { max.z }  >= -self.nzW
-           && self.pzX * if self.pzX < S::zero() { min.x } else { max.x } + self.pzY * if self.pzY < S::zero() { min.y } else { max.y }  + self.pzZ * if self.pzZ < S::zero() { min.z } else { max.z }  >= -self.pzW
+        self.nxX * if self.nxX < S::zero() {
+            min.x
+        } else {
+            max.x
+        } + self.nxY * if self.nxY < S::zero() {
+            min.y
+        } else {
+            max.y
+        } + self.nxZ * if self.nxZ < S::zero() {
+            min.z
+        } else {
+            max.z
+        } >= -self.nxW && self.pxX * if self.pxX < S::zero() {
+            min.x
+        } else {
+            max.x
+        } + self.pxY * if self.pxY < S::zero() {
+            min.y
+        } else {
+            max.y
+        } + self.pxZ * if self.pxZ < S::zero() {
+            min.z
+        } else {
+            max.z
+        } >= -self.pxW && self.nyX * if self.nyX < S::zero() {
+            min.x
+        } else {
+            max.x
+        } + self.nyY * if self.nyY < S::zero() {
+            min.y
+        } else {
+            max.y
+        } + self.nyZ * if self.nyZ < S::zero() {
+            min.z
+        } else {
+            max.z
+        } >= -self.nyW && self.pyX * if self.pyX < S::zero() {
+            min.x
+        } else {
+            max.x
+        } + self.pyY * if self.pyY < S::zero() {
+            min.y
+        } else {
+            max.y
+        } + self.pyZ * if self.pyZ < S::zero() {
+            min.z
+        } else {
+            max.z
+        } >= -self.pyW && self.nzX * if self.nzX < S::zero() {
+            min.x
+        } else {
+            max.x
+        } + self.nzY * if self.nzY < S::zero() {
+            min.y
+        } else {
+            max.y
+        } + self.nzZ * if self.nzZ < S::zero() {
+            min.z
+        } else {
+            max.z
+        } >= -self.nzW && self.pzX * if self.pzX < S::zero() {
+            min.x
+        } else {
+            max.x
+        } + self.pzY * if self.pzY < S::zero() {
+            min.y
+        } else {
+            max.y
+        } + self.pzZ * if self.pzZ < S::zero() {
+            min.z
+        } else {
+            max.z
+        } >= -self.pzW
     }
 
     /// Returns the result of testing the intersection of the frustum with a sphere, defined by a
@@ -117,13 +290,16 @@ impl<S: BaseFloat> FrustumIntersection<S> {
                 dist = self.nyX * center.x + self.nyY * center.y + self.nyZ * center.z + self.nyW;
                 if dist >= -radius {
                     inside &= dist >= radius;
-                    dist = self.pyX * center.x + self.pyY * center.y + self.pyZ * center.z + self.pyW;
+                    dist =
+                        self.pyX * center.x + self.pyY * center.y + self.pyZ * center.z + self.pyW;
                     if dist >= -radius {
                         inside &= dist >= radius;
-                        dist = self.nzX * center.x + self.nzY * center.y + self.nzZ * center.z + self.nzW;
+                        dist = self.nzX * center.x + self.nzY * center.y + self.nzZ * center.z
+                            + self.nzW;
                         if dist >= -radius {
                             inside &= dist >= radius;
-                            dist = self.pzX * center.x + self.pzY * center.y + self.pzZ * center.z + self.pzW;
+                            dist = self.pzX * center.x + self.pzY * center.y + self.pzZ * center.z
+                                + self.pzW;
                             if dist >= -radius {
                                 inside &= dist >= radius;
                                 return if inside {
@@ -143,18 +319,172 @@ impl<S: BaseFloat> FrustumIntersection<S> {
 
     pub fn intersect_aab(&self, min: &Vector3<S>, max: &Vector3<S>) -> IntersectionResult {
         let mut inside = true;
-        if (self.nxX * if self.nxX < S::zero() { min.x } else { max.x } + self.nxY * if self.nxY < S::zero() { min.y } else { max.y } + self.nxZ * if self.nxZ < S::zero() { min.z } else { max.z } >= -self.nxW) {
-            inside &= self.nxX * if self.nxX < S::zero() { max.x } else { min.x } + self.nxY * if self.nxY < S::zero() { max.y } else { min.y } + self.nxZ * if self.nxZ < S::zero() { max.z } else { min.z } >= -self.nxW;
-            if (self.pxX * if self.pxX < S::zero() { min.x } else { max.x } + self.pxY * if self.pxY < S::zero() { min.y } else { max.y } + self.pxZ * if self.pxZ < S::zero() { min.z } else { max.z } >= -self.pxW) {
-                inside &= self.pxX * if self.pxX < S::zero() { max.x } else { min.x } + self.pxY * if self.pxY < S::zero() { max.y } else { min.y } + self.pxZ * if self.pxZ < S::zero() { max.z } else { min.z } >= -self.pxW;
-                if (self.nyX * if self.nyX < S::zero() { min.x } else { max.x } + self.nyY * if self.nyY < S::zero() { min.y } else { max.y } + self.nyZ * if self.nyZ < S::zero() { min.z } else { max.z } >= -self.nyW) {
-                    inside &= self.nyX * if self.nyX < S::zero() { max.x } else { min.x } + self.nyY * if self.nyY < S::zero() { max.y } else { min.y } + self.nyZ * if self.nyZ < S::zero() { max.z } else { min.z } >= -self.nyW;
-                    if (self.pyX * if self.pyX < S::zero() { min.x } else { max.x } + self.pyY * if self.pyY < S::zero() { min.y } else { max.y } + self.pyZ * if self.pyZ < S::zero() { min.z } else { max.z } >= -self.pyW) {
-                        inside &= self.pyX * if self.pyX < S::zero() { max.x } else { min.x } + self.pyY * if self.pyY < S::zero() { max.y } else { min.y } + self.pyZ * if self.pyZ < S::zero() { max.z } else { min.z } >= -self.pyW;
-                        if (self.nzX * if self.nzX < S::zero() { min.x } else { max.x } + self.nzY * if self.nzY < S::zero() { min.y } else { max.y } + self.nzZ * if self.nzZ < S::zero() { min.z } else { max.z } >= -self.nzW) {
-                            inside &= self.nzX * if self.nzX < S::zero() { max.x } else { min.x } + self.nzY * if self.nzY < S::zero() { max.y } else { min.y } + self.nzZ * if self.nzZ < S::zero() { max.z } else { min.z } >= -self.nzW;
-                            if (self.pzX * if self.pzX < S::zero() { min.x } else { max.x } + self.pzY * if self.pzY < S::zero() { min.y } else { max.y } + self.pzZ * if self.pzZ < S::zero() { min.z } else { max.z } >= -self.pzW) {
-                                inside &= self.pzX * if self.pzX < S::zero() { max.x } else { min.x } + self.pzY * if self.pzY < S::zero() { max.y } else { min.y } + self.pzZ * if self.pzZ < S::zero() { max.z } else { min.z } >= -self.pzW;
+        if (self.nxX * if self.nxX < S::zero() {
+            min.x
+        } else {
+            max.x
+        } + self.nxY * if self.nxY < S::zero() {
+            min.y
+        } else {
+            max.y
+        } + self.nxZ * if self.nxZ < S::zero() {
+            min.z
+        } else {
+            max.z
+        } >= -self.nxW)
+        {
+            inside &= self.nxX * if self.nxX < S::zero() {
+                max.x
+            } else {
+                min.x
+            } + self.nxY * if self.nxY < S::zero() {
+                max.y
+            } else {
+                min.y
+            } + self.nxZ * if self.nxZ < S::zero() {
+                max.z
+            } else {
+                min.z
+            } >= -self.nxW;
+            if (self.pxX * if self.pxX < S::zero() {
+                min.x
+            } else {
+                max.x
+            } + self.pxY * if self.pxY < S::zero() {
+                min.y
+            } else {
+                max.y
+            } + self.pxZ * if self.pxZ < S::zero() {
+                min.z
+            } else {
+                max.z
+            } >= -self.pxW)
+            {
+                inside &= self.pxX * if self.pxX < S::zero() {
+                    max.x
+                } else {
+                    min.x
+                } + self.pxY * if self.pxY < S::zero() {
+                    max.y
+                } else {
+                    min.y
+                } + self.pxZ * if self.pxZ < S::zero() {
+                    max.z
+                } else {
+                    min.z
+                } >= -self.pxW;
+                if (self.nyX * if self.nyX < S::zero() {
+                    min.x
+                } else {
+                    max.x
+                } + self.nyY * if self.nyY < S::zero() {
+                    min.y
+                } else {
+                    max.y
+                } + self.nyZ * if self.nyZ < S::zero() {
+                    min.z
+                } else {
+                    max.z
+                } >= -self.nyW)
+                {
+                    inside &= self.nyX * if self.nyX < S::zero() {
+                        max.x
+                    } else {
+                        min.x
+                    } + self.nyY * if self.nyY < S::zero() {
+                        max.y
+                    } else {
+                        min.y
+                    } + self.nyZ * if self.nyZ < S::zero() {
+                        max.z
+                    } else {
+                        min.z
+                    } >= -self.nyW;
+                    if (self.pyX * if self.pyX < S::zero() {
+                        min.x
+                    } else {
+                        max.x
+                    } + self.pyY * if self.pyY < S::zero() {
+                        min.y
+                    } else {
+                        max.y
+                    } + self.pyZ * if self.pyZ < S::zero() {
+                        min.z
+                    } else {
+                        max.z
+                    } >= -self.pyW)
+                    {
+                        inside &= self.pyX * if self.pyX < S::zero() {
+                            max.x
+                        } else {
+                            min.x
+                        } + self.pyY * if self.pyY < S::zero() {
+                            max.y
+                        } else {
+                            min.y
+                        } + self.pyZ * if self.pyZ < S::zero() {
+                            max.z
+                        } else {
+                            min.z
+                        } >= -self.pyW;
+                        if (self.nzX * if self.nzX < S::zero() {
+                            min.x
+                        } else {
+                            max.x
+                        } + self.nzY * if self.nzY < S::zero() {
+                            min.y
+                        } else {
+                            max.y
+                        } + self.nzZ * if self.nzZ < S::zero() {
+                            min.z
+                        } else {
+                            max.z
+                        } >= -self.nzW)
+                        {
+                            inside &= self.nzX * if self.nzX < S::zero() {
+                                max.x
+                            } else {
+                                min.x
+                            }
+                                + self.nzY * if self.nzY < S::zero() {
+                                    max.y
+                                } else {
+                                    min.y
+                                }
+                                + self.nzZ * if self.nzZ < S::zero() {
+                                    max.z
+                                } else {
+                                    min.z
+                                } >= -self.nzW;
+                            if (self.pzX * if self.pzX < S::zero() {
+                                min.x
+                            } else {
+                                max.x
+                            } + self.pzY * if self.pzY < S::zero() {
+                                min.y
+                            } else {
+                                max.y
+                            } + self.pzZ * if self.pzZ < S::zero() {
+                                min.z
+                            } else {
+                                max.z
+                            } >= -self.pzW)
+                            {
+                                inside &= self.pzX * if self.pzX < S::zero() {
+                                    max.x
+                                } else {
+                                    min.x
+                                }
+                                    + self.pzY * if self.pzY < S::zero() {
+                                        max.y
+                                    } else {
+                                        min.y
+                                    }
+                                    + self.pzZ * if self.pzZ < S::zero() {
+                                        max.z
+                                    } else {
+                                        min.z
+                                    } >= -self.pzW;
                                 return if inside {
                                     IntersectionResult::Inside
                                 } else {
