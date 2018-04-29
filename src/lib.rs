@@ -2,49 +2,14 @@ extern crate cgmath;
 
 use std::mem;
 
-use cgmath::{BaseFloat, Matrix4, Vector3, Vector4, prelude::*};
-
-use glue::Matrix4Glue;
-
-mod glue {
-    pub trait Matrix4Glue<S> {
-        fn m00(&self) -> S;
-        fn m01(&self) -> S;
-        fn m02(&self) -> S;
-        fn m03(&self) -> S;
-        fn m10(&self) -> S;
-        fn m11(&self) -> S;
-        fn m12(&self) -> S;
-        fn m13(&self) -> S;
-        fn m20(&self) -> S;
-        fn m21(&self) -> S;
-        fn m22(&self) -> S;
-        fn m23(&self) -> S;
-        fn m30(&self) -> S;
-        fn m31(&self) -> S;
-        fn m32(&self) -> S;
-        fn m33(&self) -> S;
-    }
-
-    impl<S: ::cgmath::BaseFloat> Matrix4Glue<S> for ::cgmath::Matrix4<S> {
-        #[inline(always)] fn m00(&self) -> S { self.x.x }
-        #[inline(always)] fn m01(&self) -> S { self.x.y }
-        #[inline(always)] fn m02(&self) -> S { self.x.z }
-        #[inline(always)] fn m03(&self) -> S { self.x.w }
-        #[inline(always)] fn m10(&self) -> S { self.y.x }
-        #[inline(always)] fn m11(&self) -> S { self.y.y }
-        #[inline(always)] fn m12(&self) -> S { self.y.z }
-        #[inline(always)] fn m13(&self) -> S { self.y.w }
-        #[inline(always)] fn m20(&self) -> S { self.z.x }
-        #[inline(always)] fn m21(&self) -> S { self.z.y }
-        #[inline(always)] fn m22(&self) -> S { self.z.z }
-        #[inline(always)] fn m23(&self) -> S { self.z.w }
-        #[inline(always)] fn m30(&self) -> S { self.w.x }
-        #[inline(always)] fn m31(&self) -> S { self.w.y }
-        #[inline(always)] fn m32(&self) -> S { self.w.z }
-        #[inline(always)] fn m33(&self) -> S { self.w.w }
-    }
-}
+use cgmath::{
+    BaseFloat,
+    Matrix4,
+    Vector3,
+    Vector4,
+    
+    prelude::*,
+};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FrustumIntersection<S> {
@@ -96,10 +61,10 @@ impl<S: BaseFloat> FrustumIntersection<S> {
     /// If this FrustumIntersection will be used to test spheres, you can indicate so with
     /// the `allow_test_spheres` parameter
     pub fn update(&mut self, m: Matrix4<S>, allow_test_spheres: bool) {
-        self.nxX = m.m03() + m.m00();
-        self.nxY = m.m13() + m.m10();
-        self.nxZ = m.m23() + m.m20();
-        self.nxW = m.m33() + m.m30();
+        self.nxX = m.x.w + m.x.x;
+        self.nxY = m.y.w + m.y.x;
+        self.nxZ = m.z.w + m.z.x;
+        self.nxW = m.w.w + m.w.x;
         if (allow_test_spheres) {
             let invl =
                 (self.nxX * self.nxX + self.nxY * self.nxY + self.nxZ * self.nxZ).sqrt().recip();
@@ -108,10 +73,10 @@ impl<S: BaseFloat> FrustumIntersection<S> {
             self.nxZ *= invl;
             self.nxW *= invl;
         }
-        self.pxX = m.m03() - m.m00();
-        self.pxY = m.m13() - m.m10();
-        self.pxZ = m.m23() - m.m20();
-        self.pxW = m.m33() - m.m30();
+        self.pxX = m.x.w - m.x.x;
+        self.pxY = m.y.w - m.y.x;
+        self.pxZ = m.z.w - m.z.x;
+        self.pxW = m.w.w - m.w.x;
         if (allow_test_spheres) {
             let invl =
                 (self.pxX * self.pxX + self.pxY * self.pxY + self.pxZ * self.pxZ).sqrt().recip();
@@ -120,10 +85,10 @@ impl<S: BaseFloat> FrustumIntersection<S> {
             self.pxZ *= invl;
             self.pxW *= invl;
         }
-        self.nyX = m.m03() + m.m01();
-        self.nyY = m.m13() + m.m11();
-        self.nyZ = m.m23() + m.m21();
-        self.nyW = m.m33() + m.m31();
+        self.nyX = m.x.w + m.x.y;
+        self.nyY = m.y.w + m.y.y;
+        self.nyZ = m.z.w + m.z.y;
+        self.nyW = m.w.w + m.w.y;
         if (allow_test_spheres) {
             let invl =
                 (self.nyX * self.nyX + self.nyY * self.nyY + self.nyZ * self.nyZ).sqrt().recip();
@@ -132,10 +97,10 @@ impl<S: BaseFloat> FrustumIntersection<S> {
             self.nyZ *= invl;
             self.nyW *= invl;
         }
-        self.pyX = m.m03() - m.m01();
-        self.pyY = m.m13() - m.m11();
-        self.pyZ = m.m23() - m.m21();
-        self.pyW = m.m33() - m.m31();
+        self.pyX = m.x.w - m.x.y;
+        self.pyY = m.y.w - m.y.y;
+        self.pyZ = m.z.w - m.z.y;
+        self.pyW = m.w.w - m.w.y;
         if (allow_test_spheres) {
             let invl =
                 (self.pyX * self.pyX + self.pyY * self.pyY + self.pyZ * self.pyZ).sqrt().recip();
@@ -144,10 +109,10 @@ impl<S: BaseFloat> FrustumIntersection<S> {
             self.pyZ *= invl;
             self.pyW *= invl;
         }
-        self.nzX = m.m03() + m.m02();
-        self.nzY = m.m13() + m.m12();
-        self.nzZ = m.m23() + m.m22();
-        self.nzW = m.m33() + m.m32();
+        self.nzX = m.x.w + m.x.z;
+        self.nzY = m.y.w + m.y.z;
+        self.nzZ = m.z.w + m.z.z;
+        self.nzW = m.w.w + m.w.z;
         if (allow_test_spheres) {
             let invl =
                 (self.nzX * self.nzX + self.nzY * self.nzY + self.nzZ * self.nzZ).sqrt().recip();
@@ -156,10 +121,10 @@ impl<S: BaseFloat> FrustumIntersection<S> {
             self.nzZ *= invl;
             self.nzW *= invl;
         }
-        self.pzX = m.m03() - m.m02();
-        self.pzY = m.m13() - m.m12();
-        self.pzZ = m.m23() - m.m22();
-        self.pzW = m.m33() - m.m32();
+        self.pzX = m.x.w - m.x.z;
+        self.pzY = m.y.w - m.y.z;
+        self.pzZ = m.z.w - m.z.z;
+        self.pzW = m.w.w - m.w.z;
         if (allow_test_spheres) {
             let invl =
                 (self.pzX * self.pzX + self.pzY * self.pzY + self.pzZ * self.pzZ).sqrt().recip();
