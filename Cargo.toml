@@ -1,6 +1,6 @@
 [package]
 name = "cgmath-culling"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["germän gômez <germangb42@gmail.com>"]
 description = "Small Frustum Culling crate meant to be used alongside cgmath"
 
