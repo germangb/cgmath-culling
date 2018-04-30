@@ -2,7 +2,19 @@ extern crate cgmath;
 
 use std::mem;
 
-use cgmath::{BaseFloat, Matrix4, Vector3, Vector4, prelude::*};
+use cgmath::{
+    BaseFloat,
+
+    Perspective,
+    PerspectiveFov,
+    Ortho,
+
+    Matrix4,
+    Vector3,
+    Vector4,
+    
+    prelude::*,
+};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FrustumCuller<S> {
@@ -43,6 +55,21 @@ pub enum Intersection {
 }
 
 impl<S: BaseFloat> FrustumCuller<S> {
+    #[inline]
+    pub fn from_perspective(perspective: Perspective<S>) -> Self {
+        Self::from_matrix4(perspective.into())
+    }
+
+    #[inline]
+    pub fn from_perspective_fov(perspective: PerspectiveFov<S>) -> Self {
+        Self::from_matrix4(perspective.into())
+    }
+
+    #[inline]
+    pub fn from_ortho(ortho: Ortho<S>) -> Self {
+        Self::from_matrix4(ortho.into())
+    }
+
     /// Create a FrustumCuller given a matrix from with the frustum planes are extracted.
     ///
     /// In order to update the frustum later on, use the update method.
