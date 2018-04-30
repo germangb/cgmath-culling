@@ -1,6 +1,6 @@
 [package]
 name = "cgmath-culling"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["germän gômez <germangb42@gmail.com>"]
 description = "Small Frustum Culling crate meant to be used alongside cgmath"
 
@@ -11,7 +11,6 @@ readme = "README.md"
 keywords = ["math", "algebra", "vector", "culling", "gamedev"]
 categories = ["games", "algorithms", "game-engines"]
 
-license = "MIT"
 license-file = "LICENSE.md"
 
 [badges]
