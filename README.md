@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/germangb/cgmath-culling.svg?branch=master)](https://travis-ci.org/germangb/cgmath-culling)
 
+Small [frustum culling](https://en.wikipedia.org/wiki/Hidden_surface_determination#Viewing_frustum_culling) library meant to be used alongside the `cgmath` crate.
+
 ## Usage
 
 ```rust
