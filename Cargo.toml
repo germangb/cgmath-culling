@@ -7,7 +7,7 @@ description = "Small Frustum Culling crate meant to be used alongside cgmath"
 repository = "https://github.com/germangb/cgmath-culling.git"
 homepage = "https://github.com/germangb/cgmath-culling.git"
 
-keywords = ["math", "algebra", "vector", "matrix", "frustum", "culling", "gamedev", "optimization"]
+keywords = ["math", "algebra", "vector", "culling", "gamedev"]
 categories = ["games", "algorithms", "game-engines"]
 
 license = "MIT"
