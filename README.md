@@ -25,7 +25,7 @@ let per = PerspectiveFov { fovy: Rad(3.1415_f32 / 2.0),
 let culling = FrustumCuller::from_perspective_fov(per);
 let bounding_box = BoundingBox::from_min_max(Vector3::new(0.0, 0.0, -7.0), Vector3::new(1.0, 1.0, -5.0));
 
-match culling.intersect_aab(bounding_box) {
+match culling.test_bounding_box(bounding_box) {
     Intersection::Inside  => println!("I'm inside"),
     Intersection::Outside => println!("I'm outside"),
     Intersection::Partial => println!("I'm partially inside"),

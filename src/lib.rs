@@ -2,16 +2,7 @@ extern crate cgmath;
 
 use std::mem;
 
-use cgmath::{
-    BaseFloat,
-
-    Matrix4,
-    Vector3,
-
-    Ortho,
-    Perspective,
-    PerspectiveFov,
-};
+use cgmath::{BaseFloat, Matrix4, Ortho, Perspective, PerspectiveFov, Vector3};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FrustumCuller<S> {
@@ -181,8 +172,8 @@ impl<S: BaseFloat> FrustumCuller<S> {
     }
 
     /// Test wether a 3D point lies inside of the frustum
-    pub fn test_point(&self, point: Vector3<S>) -> bool {
-        self.nx_x * point.x + self.nx_y * point.y + self.nx_z * point.z + self.nx_w >= S::zero()
+    pub fn test_point(&self, point: Vector3<S>) -> Intersection {
+        if self.nx_x * point.x + self.nx_y * point.y + self.nx_z * point.z + self.nx_w >= S::zero()
             && self.px_x * point.x + self.px_y * point.y + self.px_z * point.z + self.px_w
                 >= S::zero()
             && self.ny_x * point.x + self.ny_y * point.y + self.ny_z * point.z + self.ny_w
@@ -193,112 +184,18 @@ impl<S: BaseFloat> FrustumCuller<S> {
                 >= S::zero()
             && self.pz_x * point.x + self.pz_y * point.y + self.pz_z * point.z + self.pz_w
                 >= S::zero()
-    }
-
-    /// Tests wether a sphere lies inside the frustum.
-    ///
-    /// This method doesn't distinguish between total and partial intersection with the frustum. In
-    /// order to make this distinction, use the `intersect_sphere` method instead.
-    pub fn test_sphere(&self, center: Vector3<S>, radius: S) -> bool {
-        self.nx_x * center.x + self.nx_y * center.y + self.nx_z * center.z + self.nx_w >= -radius
-            && self.px_x * center.x + self.px_y * center.y + self.px_z * center.z + self.px_w
-                >= -radius
-            && self.ny_x * center.x + self.ny_y * center.y + self.ny_z * center.z + self.ny_w
-                >= -radius
-            && self.py_x * center.x + self.py_y * center.y + self.py_z * center.z + self.py_w
-                >= -radius
-            && self.nz_x * center.x + self.nz_y * center.y + self.nz_z * center.z + self.nz_w
-                >= -radius
-            && self.pz_x * center.x + self.pz_y * center.y + self.pz_z * center.z + self.pz_w
-                >= -radius
-    }
-
-    /// Test wether an axis aligned box, defined by is minimum (`min`) and maximum (`max`) points,
-    /// lies inside or outside the frustum.
-    ///
-    /// This method won't distinguish between partial or total intersection. In order to obtain
-    /// this information, use the `intersect_aab` method instead.
-    pub fn test_aab(&self, aab: BoundingBox<S>) -> bool {
-        self.nx_x * if self.nx_x < S::zero() {
-            aab.min.x
+        {
+            Intersection::Inside
         } else {
-            aab.max.x
-        } + self.nx_y * if self.nx_y < S::zero() {
-            aab.min.y
-        } else {
-            aab.max.y
-        } + self.nx_z * if self.nx_z < S::zero() {
-            aab.min.z
-        } else {
-            aab.max.z
-        } >= -self.nx_w && self.px_x * if self.px_x < S::zero() {
-            aab.min.x
-        } else {
-            aab.max.x
-        } + self.px_y * if self.px_y < S::zero() {
-            aab.min.y
-        } else {
-            aab.max.y
-        } + self.px_z * if self.px_z < S::zero() {
-            aab.min.z
-        } else {
-            aab.max.z
-        } >= -self.px_w && self.ny_x * if self.ny_x < S::zero() {
-            aab.min.x
-        } else {
-            aab.max.x
-        } + self.ny_y * if self.ny_y < S::zero() {
-            aab.min.y
-        } else {
-            aab.max.y
-        } + self.ny_z * if self.ny_z < S::zero() {
-            aab.min.z
-        } else {
-            aab.max.z
-        } >= -self.ny_w && self.py_x * if self.py_x < S::zero() {
-            aab.min.x
-        } else {
-            aab.max.x
-        } + self.py_y * if self.py_y < S::zero() {
-            aab.min.y
-        } else {
-            aab.max.y
-        } + self.py_z * if self.py_z < S::zero() {
-            aab.min.z
-        } else {
-            aab.max.z
-        } >= -self.py_w && self.nz_x * if self.nz_x < S::zero() {
-            aab.min.x
-        } else {
-            aab.max.x
-        } + self.nz_y * if self.nz_y < S::zero() {
-            aab.min.y
-        } else {
-            aab.max.y
-        } + self.nz_z * if self.nz_z < S::zero() {
-            aab.min.z
-        } else {
-            aab.max.z
-        } >= -self.nz_w && self.pz_x * if self.pz_x < S::zero() {
-            aab.min.x
-        } else {
-            aab.max.x
-        } + self.pz_y * if self.pz_y < S::zero() {
-            aab.min.y
-        } else {
-            aab.max.y
-        } + self.pz_z * if self.pz_z < S::zero() {
-            aab.min.z
-        } else {
-            aab.max.z
-        } >= -self.pz_w
+            Intersection::Outside
+        }
     }
 
     /// Returns the result of testing the intersection of the frustum with a sphere, defined by a
     /// center point (`center`) and a radius (`radius`).
     ///
     /// This method will distinguish between a partial intersection and a total intersection.
-    pub fn intersect_sphere(&self, center: Vector3<S>, radius: S) -> Intersection {
+    pub fn test_sphere(&self, center: Vector3<S>, radius: S) -> Intersection {
         let mut inside = true;
         let mut dist;
         dist = self.nx_x * center.x + self.nx_y * center.y + self.nx_z * center.z + self.nx_w;
@@ -339,7 +236,7 @@ impl<S: BaseFloat> FrustumCuller<S> {
         Intersection::Outside
     }
 
-    pub fn intersect_aab(&self, aab: BoundingBox<S>) -> Intersection {
+    pub fn test_bounding_box(&self, aab: BoundingBox<S>) -> Intersection {
         let mut inside = true;
         if self.nx_x * if self.nx_x < S::zero() {
             aab.min.x
@@ -529,15 +426,7 @@ impl<S: BaseFloat> FrustumCuller<S> {
 mod tests {
     use {BoundingBox, FrustumCuller, Intersection};
 
-    use cgmath::{
-        Matrix4,
-        Vector3,
-        Ortho,
-        PerspectiveFov,
-        Rad,
-
-        prelude::*,
-    };
+    use cgmath::{Matrix4, Ortho, PerspectiveFov, Rad, Vector3, prelude::*};
 
     #[test]
     fn sphere_in_frustum_ortho() {
@@ -552,8 +441,9 @@ mod tests {
             }.into(),
         );
 
-        assert!(frustum_culling.test_sphere(Vector3::new(1.0, 0.0, 0.0), 0.1));
-        assert!(!frustum_culling.test_sphere(Vector3::new(1.2, 0.0, 0.0), 0.1));
+        assert_eq!(Intersection::Inside, frustum_culling.test_sphere(Vector3::new(0.0, 0.0, 0.0), 0.1));
+        assert_eq!(Intersection::Partial, frustum_culling.test_sphere(Vector3::new(1.0, 0.0, 0.0), 0.1));
+        assert_eq!(Intersection::Outside, frustum_culling.test_sphere(Vector3::new(1.2, 0.0, 0.0), 0.1));
     }
 
     #[test]
@@ -567,8 +457,8 @@ mod tests {
             }.into(),
         );
 
-        assert!(frustum_culling.test_sphere(Vector3::new(1.0, 0.0, -2.0), 0.1));
-        assert!(!frustum_culling.test_sphere(Vector3::new(4.0, 0.0, -2.0), 0.1));
+        assert_eq!(Intersection::Inside, frustum_culling.test_sphere(Vector3::new(1.0, 0.0, -2.0), 0.1));
+        assert_eq!(Intersection::Outside, frustum_culling.test_sphere(Vector3::new(4.0, 0.0, -2.0), 0.1));
     }
 
     #[test]
@@ -582,8 +472,8 @@ mod tests {
             }.into(),
         );
 
-        assert!(frustum_culling.test_point(Vector3::new(0.0, 0.0, -5.0)));
-        assert!(!frustum_culling.test_point(Vector3::new(0.0, 6.0, -5.0)));
+        assert_eq!(Intersection::Inside, frustum_culling.test_point(Vector3::new(0.0, 0.0, -5.0)));
+        assert_eq!(Intersection::Outside, frustum_culling.test_point(Vector3::new(0.0, 6.0, -5.0)));
     }
 
     #[test]
@@ -601,21 +491,21 @@ mod tests {
 
         assert_eq!(
             Intersection::Partial,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(-20.0, -2.0, 0.0),
                 Vector3::new(20.0, 2.0, 0.0)
             ))
         );
         assert_eq!(
             Intersection::Inside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(-0.5, -0.5, -0.5),
                 Vector3::new(0.5, 0.5, 0.5)
             ))
         );
         assert_eq!(
             Intersection::Outside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(1.1, 0.0, 0.0),
                 Vector3::new(2.0, 2.0, 2.0)
             ))
@@ -632,14 +522,14 @@ mod tests {
 
         assert_eq!(
             Intersection::Partial,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(0.0, 0.0, 0.0),
                 Vector3::new(2.0, 2.0, 2.0)
             ))
         );
         assert_eq!(
             Intersection::Outside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(1.1, 0.0, 0.0),
                 Vector3::new(2.0, 2.0, 2.0)
             ))
@@ -649,28 +539,28 @@ mod tests {
 
         assert_eq!(
             Intersection::Partial,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(0.5, 0.5, 0.5),
                 Vector3::new(2.0, 2.0, 2.0)
             ))
         );
         assert_eq!(
             Intersection::Outside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(1.5, 0.5, 0.5),
                 Vector3::new(2.0, 2.0, 2.0)
             ))
         );
         assert_eq!(
             Intersection::Outside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(-2.5, 0.5, 0.5),
                 Vector3::new(-1.5, 2.0, 2.0)
             ))
         );
         assert_eq!(
             Intersection::Outside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(-0.5, -2.5, 0.5),
                 Vector3::new(1.5, -2.0, 2.0)
             ))
@@ -688,28 +578,28 @@ mod tests {
 
         assert_eq!(
             Intersection::Inside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(0.0, 0.0, -7.0),
                 Vector3::new(1.0, 1.0, -5.0)
             ))
         );
         assert_eq!(
             Intersection::Outside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(1.1, 0.0, 0.0),
                 Vector3::new(2.0, 2.0, 2.0)
             ))
         );
         assert_eq!(
             Intersection::Outside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(4.0, 4.0, -3.0),
                 Vector3::new(5.0, 5.0, -5.0)
             ))
         );
         assert_eq!(
             Intersection::Outside,
-            c.intersect_aab(BoundingBox::from_min_max(
+            c.test_bounding_box(BoundingBox::from_min_max(
                 Vector3::new(-6.0, -6.0, -2.0),
                 Vector3::new(-1.0, -4.0, -4.0)
             ))
