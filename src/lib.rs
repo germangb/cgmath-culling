@@ -89,7 +89,7 @@ impl<S: BaseFloat> FrustumCuller<S> {
         Self::from_matrix(ortho.into())
     }
 
-    fn from_matrix(m: Matrix4<S>) -> Self {
+    pub fn from_matrix(m: Matrix4<S>) -> Self {
         let mut culler: Self = unsafe { mem::zeroed() };
 
         culler.nx_x = m.x.w + m.x.x;
