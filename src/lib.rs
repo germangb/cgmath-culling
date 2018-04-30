@@ -2,7 +2,7 @@ extern crate cgmath;
 
 use std::mem;
 
-use cgmath::{BaseFloat, Matrix4, Ortho, Perspective, PerspectiveFov, Vector3};
+use cgmath::{prelude::*, BaseFloat, Matrix4, Ortho, Perspective, PerspectiveFov, Vector3};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FrustumCuller<S> {
@@ -50,7 +50,7 @@ pub enum Intersection {
     Outside,
 }
 
-impl<S> BoundingBox<S> {
+impl<S: BaseFloat> BoundingBox<S> {
     #[inline]
     pub fn from_min_max(min: Vector3<S>, max: Vector3<S>) -> Self {
         Self { min, max }
@@ -61,6 +61,12 @@ impl<S> BoundingBox<S> {
             min: Vector3::new(min_x, min_y, min_z),
             max: Vector3::new(max_x, max_y, max_z),
         }
+    }
+
+    /// Create a bounding box where both the minimum and maximum points are the vector zero.
+    #[inline]
+    pub fn zero() -> Self {
+        Self::from_min_max(Vector3::zero(), Vector3::zero())
     }
 }
 
