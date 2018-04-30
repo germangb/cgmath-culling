@@ -2,6 +2,19 @@
 name = "cgmath-culling"
 version = "0.1.0"
 authors = ["germän gômez <germangb42@gmail.com>"]
+description = "Small Frustum Culling crate meant to be used alongside cgmath"
+
+repository = "https://github.com/germangb/cgmath-culling.git"
+homepage = "https://github.com/germangb/cgmath-culling.git"
+
+keywords = ["math", "algebra", "vector", "matrix", "frustum", "culling", "gamedev", "optimization"]
+categories = ["games", "algorithms", "game-engines"]
+
+license = "MIT"
+license-file = "LICENSE.md"
+
+[badges]
+travis-ci = { repository = "germangb/cgmath-culling", branch = "master" }
 
 [dependencies]
 cgmath = "0.16"

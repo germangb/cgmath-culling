@@ -1,6 +1,10 @@
 # cgmath frustum culling
 
 [![Build Status](https://travis-ci.org/germangb/cgmath-culling.svg?branch=master)](https://travis-ci.org/germangb/cgmath-culling)
+[![Package](https://img.shields.io/crates/v/cgmath-culling.svg)](https://crates.io/crates/cgmath-culling)
+[![Downloads](https://img.shields.io/crates/d/cgmath-culling.svg)](https://crates.io/crates/cgmath-culling)
+![LICENSE](https://img.shields.io/crates/l/cgmath-culling.svg)
+
 
 Small [frustum culling](https://en.wikipedia.org/wiki/Hidden_surface_determination#Viewing_frustum_culling) crate meant to be used alongside the `cgmath` crate.
 
