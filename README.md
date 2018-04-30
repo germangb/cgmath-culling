@@ -14,9 +14,9 @@ use cgmath::{PerspectiveFov, Rad};
 use cgmath_culling::{FrustumCuller, Intersection};
 
 let per = PerspectiveFov { fovy: Rad(3.1415_f32 / 2.0),
-                                  aspect: 1.0,
-                                  near: 0.1,
-                                  far: 100.0 }.into();
+                           aspect: 1.0,
+                           near: 0.1,
+                           far: 100.0 }.into();
 
 let culling = FrustumCuller::from_perspective_fov(per);
 
