@@ -57,120 +57,102 @@ pub enum Intersection {
 impl<S: BaseFloat> FrustumCuller<S> {
     #[inline]
     pub fn from_perspective(perspective: Perspective<S>) -> Self {
-        Self::from_matrix4(perspective.into())
+        Self::from_matrix(perspective.into())
     }
 
     #[inline]
     pub fn from_perspective_fov(perspective: PerspectiveFov<S>) -> Self {
-        Self::from_matrix4(perspective.into())
+        Self::from_matrix(perspective.into())
     }
 
     #[inline]
     pub fn from_ortho(ortho: Ortho<S>) -> Self {
-        Self::from_matrix4(ortho.into())
+        Self::from_matrix(ortho.into())
     }
 
-    /// Create a FrustumCuller given a matrix from with the frustum planes are extracted.
-    ///
-    /// In order to update the frustum later on, use the update method.
-    pub fn from_matrix4(m: Matrix4<S>) -> Self {
-        let mut intersect: Self = unsafe { mem::zeroed() };
-        intersect.update(m);
-        intersect
-    }
+    fn from_matrix(m: Matrix4<S>) -> Self {
+        let mut culler: Self = unsafe { mem::zeroed() };
 
-    /// Updates the frustum, using a matrix, from which the frustum planes are extracted.
-    ///
-    /// If this `FrustumCuller` is meant to be used with spheres, use the method
-    /// `update_with_spheres` instead.
-    #[inline]
-    pub fn update(&mut self, m: Matrix4<S>) {
-        self.update_with_spheres(m, true);
-    }
-
-    /// Updates the frustum, using a matrix, from which the frustum planes are extracted.
-    ///
-    /// If this FrustumCuller will be used to test spheres, you can indicate so with
-    /// the `allow_test_spheres` parameter
-    pub fn update_with_spheres(&mut self, m: Matrix4<S>, allow_test_spheres: bool) {
-        self.nx_x = m.x.w + m.x.x;
-        self.nx_y = m.y.w + m.y.x;
-        self.nx_z = m.z.w + m.z.x;
-        self.nx_w = m.w.w + m.w.x;
-        if (allow_test_spheres) {
-            let invl = (self.nx_x * self.nx_x + self.nx_y * self.nx_y + self.nx_z * self.nx_z)
+        culler.nx_x = m.x.w + m.x.x;
+        culler.nx_y = m.y.w + m.y.x;
+        culler.nx_z = m.z.w + m.z.x;
+        culler.nx_w = m.w.w + m.w.x;
+        //if (allow_test_spheres) {
+            let invl = (culler.nx_x * culler.nx_x + culler.nx_y * culler.nx_y + culler.nx_z * culler.nx_z)
                 .sqrt()
                 .recip();
-            self.nx_x *= invl;
-            self.nx_y *= invl;
-            self.nx_z *= invl;
-            self.nx_w *= invl;
-        }
-        self.px_x = m.x.w - m.x.x;
-        self.px_y = m.y.w - m.y.x;
-        self.px_z = m.z.w - m.z.x;
-        self.px_w = m.w.w - m.w.x;
-        if (allow_test_spheres) {
-            let invl = (self.px_x * self.px_x + self.px_y * self.px_y + self.px_z * self.px_z)
+            culler.nx_x *= invl;
+            culler.nx_y *= invl;
+            culler.nx_z *= invl;
+            culler.nx_w *= invl;
+        //}
+        culler.px_x = m.x.w - m.x.x;
+        culler.px_y = m.y.w - m.y.x;
+        culler.px_z = m.z.w - m.z.x;
+        culler.px_w = m.w.w - m.w.x;
+        //if (allow_test_spheres) {
+            let invl = (culler.px_x * culler.px_x + culler.px_y * culler.px_y + culler.px_z * culler.px_z)
                 .sqrt()
                 .recip();
-            self.px_x *= invl;
-            self.px_y *= invl;
-            self.px_z *= invl;
-            self.px_w *= invl;
-        }
-        self.ny_x = m.x.w + m.x.y;
-        self.ny_y = m.y.w + m.y.y;
-        self.ny_z = m.z.w + m.z.y;
-        self.ny_w = m.w.w + m.w.y;
-        if (allow_test_spheres) {
-            let invl = (self.ny_x * self.ny_x + self.ny_y * self.ny_y + self.ny_z * self.ny_z)
+            culler.px_x *= invl;
+            culler.px_y *= invl;
+            culler.px_z *= invl;
+            culler.px_w *= invl;
+        //}
+        culler.ny_x = m.x.w + m.x.y;
+        culler.ny_y = m.y.w + m.y.y;
+        culler.ny_z = m.z.w + m.z.y;
+        culler.ny_w = m.w.w + m.w.y;
+        //if (allow_test_spheres) {
+            let invl = (culler.ny_x * culler.ny_x + culler.ny_y * culler.ny_y + culler.ny_z * culler.ny_z)
                 .sqrt()
                 .recip();
-            self.ny_x *= invl;
-            self.ny_y *= invl;
-            self.ny_z *= invl;
-            self.ny_w *= invl;
-        }
-        self.py_x = m.x.w - m.x.y;
-        self.py_y = m.y.w - m.y.y;
-        self.py_z = m.z.w - m.z.y;
-        self.py_w = m.w.w - m.w.y;
-        if (allow_test_spheres) {
-            let invl = (self.py_x * self.py_x + self.py_y * self.py_y + self.py_z * self.py_z)
+            culler.ny_x *= invl;
+            culler.ny_y *= invl;
+            culler.ny_z *= invl;
+            culler.ny_w *= invl;
+        //}
+        culler.py_x = m.x.w - m.x.y;
+        culler.py_y = m.y.w - m.y.y;
+        culler.py_z = m.z.w - m.z.y;
+        culler.py_w = m.w.w - m.w.y;
+        //if (allow_test_spheres) {
+            let invl = (culler.py_x * culler.py_x + culler.py_y * culler.py_y + culler.py_z * culler.py_z)
                 .sqrt()
                 .recip();
-            self.py_x *= invl;
-            self.py_y *= invl;
-            self.py_z *= invl;
-            self.py_w *= invl;
-        }
-        self.nz_x = m.x.w + m.x.z;
-        self.nz_y = m.y.w + m.y.z;
-        self.nz_z = m.z.w + m.z.z;
-        self.nz_w = m.w.w + m.w.z;
-        if (allow_test_spheres) {
-            let invl = (self.nz_x * self.nz_x + self.nz_y * self.nz_y + self.nz_z * self.nz_z)
+            culler.py_x *= invl;
+            culler.py_y *= invl;
+            culler.py_z *= invl;
+            culler.py_w *= invl;
+        //}
+        culler.nz_x = m.x.w + m.x.z;
+        culler.nz_y = m.y.w + m.y.z;
+        culler.nz_z = m.z.w + m.z.z;
+        culler.nz_w = m.w.w + m.w.z;
+        //if (allow_test_spheres) {
+            let invl = (culler.nz_x * culler.nz_x + culler.nz_y * culler.nz_y + culler.nz_z * culler.nz_z)
                 .sqrt()
                 .recip();
-            self.nz_x *= invl;
-            self.nz_y *= invl;
-            self.nz_z *= invl;
-            self.nz_w *= invl;
-        }
-        self.pz_x = m.x.w - m.x.z;
-        self.pz_y = m.y.w - m.y.z;
-        self.pz_z = m.z.w - m.z.z;
-        self.pz_w = m.w.w - m.w.z;
-        if (allow_test_spheres) {
-            let invl = (self.pz_x * self.pz_x + self.pz_y * self.pz_y + self.pz_z * self.pz_z)
+            culler.nz_x *= invl;
+            culler.nz_y *= invl;
+            culler.nz_z *= invl;
+            culler.nz_w *= invl;
+        //}
+        culler.pz_x = m.x.w - m.x.z;
+        culler.pz_y = m.y.w - m.y.z;
+        culler.pz_z = m.z.w - m.z.z;
+        culler.pz_w = m.w.w - m.w.z;
+        //if (allow_test_spheres) {
+            let invl = (culler.pz_x * culler.pz_x + culler.pz_y * culler.pz_y + culler.pz_z * culler.pz_z)
                 .sqrt()
                 .recip();
-            self.pz_x *= invl;
-            self.pz_y *= invl;
-            self.pz_z *= invl;
-            self.pz_w *= invl;
-        }
+            culler.pz_x *= invl;
+            culler.pz_y *= invl;
+            culler.pz_z *= invl;
+            culler.pz_w *= invl;
+        //}
+        
+        culler
     }
 
     /// Test wether a 3D point lies inside of the frustum
@@ -526,7 +508,7 @@ mod tests {
 
     #[test]
     fn sphere_in_frustum_ortho() {
-        let frustum_culling = FrustumCuller::from_matrix4(
+        let frustum_culling = FrustumCuller::from_matrix(
             Ortho {
                 left: -1.0,
                 right: 1.0,
@@ -543,7 +525,7 @@ mod tests {
 
     #[test]
     fn sphere_in_frustum_perspective() {
-        let frustum_culling = FrustumCuller::from_matrix4(
+        let frustum_culling = FrustumCuller::from_matrix(
             PerspectiveFov {
                 fovy: Rad(3.14159265 / 2.0),
                 aspect: 1.0,
@@ -558,7 +540,7 @@ mod tests {
 
     #[test]
     fn test_point_in_perspective() {
-        let frustum_culling = FrustumCuller::from_matrix4(
+        let frustum_culling = FrustumCuller::from_matrix(
             PerspectiveFov {
                 fovy: Rad(3.14159265 / 2.0),
                 aspect: 1.0,
@@ -573,7 +555,7 @@ mod tests {
 
     #[test]
     fn test_aab_in_ortho() {
-        let mut c = FrustumCuller::from_matrix4(
+        let mut c = FrustumCuller::from_matrix(
             Ortho {
                 left: -1.0,
                 right: 1.0,
@@ -597,7 +579,7 @@ mod tests {
             c.intersect_aab(Vector3::new(1.1, 0.0, 0.0), Vector3::new(2.0, 2.0, 2.0))
         );
 
-        c.update(
+        c = FrustumCuller::from_ortho(
             Ortho {
                 left: -1.0,
                 right: 1.0,
@@ -605,7 +587,7 @@ mod tests {
                 top: 1.0,
                 near: -1.0,
                 far: 1.0,
-            }.into(),
+            },
         );
 
         assert_eq!(
@@ -617,7 +599,7 @@ mod tests {
             c.intersect_aab(Vector3::new(1.1, 0.0, 0.0), Vector3::new(2.0, 2.0, 2.0))
         );
 
-        c.update(Matrix4::identity());
+        c = FrustumCuller::from_matrix(Matrix4::identity());
 
         assert_eq!(
             Intersection::Partial,
@@ -639,13 +621,13 @@ mod tests {
 
     #[test]
     fn test_aab_in_perspective() {
-        let c = FrustumCuller::from_matrix4(
+        let c = FrustumCuller::from_perspective_fov(
             PerspectiveFov {
                 fovy: Rad(3.14159265 / 2.0),
                 aspect: 1.0,
                 near: 0.1,
                 far: 100.0,
-            }.into(),
+            },
         );
 
         assert_eq!(
