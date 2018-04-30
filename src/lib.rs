@@ -471,12 +471,14 @@ impl<S: BaseFloat> FrustumCuller<S> {
 }
 
 impl<S> From<(Vector3<S>, Vector3<S>)> for BoundingBox<S> {
+    #[inline]
     fn from((min, max): (Vector3<S>, Vector3<S>)) -> Self {
         Self { min, max }
     }
 }
 
 impl<S> From<(Vector3<S>, S)> for Sphere<S> {
+    #[inline]
     fn from((center, radius): (Vector3<S>, S)) -> Self {
         Self { center, radius }
     }
