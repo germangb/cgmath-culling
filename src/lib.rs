@@ -5,7 +5,7 @@ use std::mem;
 use cgmath::{BaseFloat, Matrix4, Vector3, Vector4, prelude::*};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct FrustumIntersection<S> {
+pub struct FrustumCuller<S> {
     nx_x: S,
     nx_y: S,
     nx_z: S,
@@ -33,14 +33,17 @@ pub struct FrustumIntersection<S> {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum IntersectionResult {
+pub enum Intersection {
+    /// fully inside the frustum
     Inside,
+    /// Partially inside the frustum
+    Partial,
+    /// Fully outside the frustum
     Outside,
-    Intersect,
 }
 
-impl<S: BaseFloat> FrustumIntersection<S> {
-    /// Create a FrustumIntersection given a matrix from with the frustum planes are extracted.
+impl<S: BaseFloat> FrustumCuller<S> {
+    /// Create a FrustumCuller given a matrix from with the frustum planes are extracted.
     ///
     /// In order to update the frustum later on, use the update method.
     pub fn from_matrix4(m: Matrix4<S>) -> Self {
@@ -51,7 +54,7 @@ impl<S: BaseFloat> FrustumIntersection<S> {
 
     /// Updates the frustum, using a matrix, from which the frustum planes are extracted.
     ///
-    /// If this `FrustumIntersection` is meant to be used with spheres, use the method
+    /// If this `FrustumCuller` is meant to be used with spheres, use the method
     /// `update_with_spheres` instead.
     #[inline]
     pub fn update(&mut self, m: Matrix4<S>) {
@@ -60,7 +63,7 @@ impl<S: BaseFloat> FrustumIntersection<S> {
 
     /// Updates the frustum, using a matrix, from which the frustum planes are extracted.
     ///
-    /// If this FrustumIntersection will be used to test spheres, you can indicate so with
+    /// If this FrustumCuller will be used to test spheres, you can indicate so with
     /// the `allow_test_spheres` parameter
     pub fn update_with_spheres(&mut self, m: Matrix4<S>, allow_test_spheres: bool) {
         self.nx_x = m.x.w + m.x.x;
@@ -261,7 +264,7 @@ impl<S: BaseFloat> FrustumIntersection<S> {
     /// center point (`center`) and a radius (`radius`).
     ///
     /// This method will distinguish between a partial intersection and a total intersection.
-    pub fn intersect_sphere(&self, center: Vector3<S>, radius: S) -> IntersectionResult {
+    pub fn intersect_sphere(&self, center: Vector3<S>, radius: S) -> Intersection {
         let mut inside = true;
         let mut dist = S::zero();
         dist = self.nx_x * center.x + self.nx_y * center.y + self.nx_z * center.z + self.nx_w;
@@ -288,9 +291,9 @@ impl<S: BaseFloat> FrustumIntersection<S> {
                             if dist >= -radius {
                                 inside &= dist >= radius;
                                 return if inside {
-                                    IntersectionResult::Inside
+                                    Intersection::Inside
                                 } else {
-                                    IntersectionResult::Intersect
+                                    Intersection::Partial
                                 };
                             }
                         }
@@ -299,10 +302,10 @@ impl<S: BaseFloat> FrustumIntersection<S> {
             }
         }
 
-        IntersectionResult::Outside
+        Intersection::Outside
     }
 
-    pub fn intersect_aab(&self, min: Vector3<S>, max: Vector3<S>) -> IntersectionResult {
+    pub fn intersect_aab(&self, min: Vector3<S>, max: Vector3<S>) -> Intersection {
         let mut inside = true;
         if (self.nx_x * if self.nx_x < S::zero() {
             min.x
@@ -473,9 +476,9 @@ impl<S: BaseFloat> FrustumIntersection<S> {
                                         min.z
                                     } >= -self.pz_w;
                                 return if inside {
-                                    IntersectionResult::Inside
+                                    Intersection::Inside
                                 } else {
-                                    IntersectionResult::Intersect
+                                    Intersection::Partial
                                 };
                             }
                         }
@@ -484,19 +487,19 @@ impl<S: BaseFloat> FrustumIntersection<S> {
             }
         }
 
-        IntersectionResult::Outside
+        Intersection::Outside
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use {FrustumIntersection, IntersectionResult};
+    use {FrustumCuller, Intersection};
 
     use cgmath::{Matrix4, Ortho, PerspectiveFov, Rad, Vector3, prelude::*};
 
     #[test]
     fn sphere_in_frustum_ortho() {
-        let frustum_culling = FrustumIntersection::from_matrix4(
+        let frustum_culling = FrustumCuller::from_matrix4(
             Ortho {
                 left: -1.0,
                 right: 1.0,
@@ -513,7 +516,7 @@ mod tests {
 
     #[test]
     fn sphere_in_frustum_perspective() {
-        let frustum_culling = FrustumIntersection::from_matrix4(
+        let frustum_culling = FrustumCuller::from_matrix4(
             PerspectiveFov {
                 fovy: Rad(3.14159265 / 2.0),
                 aspect: 1.0,
@@ -528,7 +531,7 @@ mod tests {
 
     #[test]
     fn test_point_in_perspective() {
-        let frustum_culling = FrustumIntersection::from_matrix4(
+        let frustum_culling = FrustumCuller::from_matrix4(
             PerspectiveFov {
                 fovy: Rad(3.14159265 / 2.0),
                 aspect: 1.0,
@@ -543,7 +546,7 @@ mod tests {
 
     #[test]
     fn test_aab_in_ortho() {
-        let mut c = FrustumIntersection::from_matrix4(
+        let mut c = FrustumCuller::from_matrix4(
             Ortho {
                 left: -1.0,
                 right: 1.0,
@@ -555,15 +558,15 @@ mod tests {
         );
 
         assert_eq!(
-            IntersectionResult::Intersect,
+            Intersection::Partial,
             c.intersect_aab(Vector3::new(-20.0, -2.0, 0.0), Vector3::new(20.0, 2.0, 0.0))
         );
         assert_eq!(
-            IntersectionResult::Inside,
+            Intersection::Inside,
             c.intersect_aab(Vector3::new(-0.5, -0.5, -0.5), Vector3::new(0.5, 0.5, 0.5))
         );
         assert_eq!(
-            IntersectionResult::Outside,
+            Intersection::Outside,
             c.intersect_aab(Vector3::new(1.1, 0.0, 0.0), Vector3::new(2.0, 2.0, 2.0))
         );
 
@@ -579,37 +582,37 @@ mod tests {
         );
 
         assert_eq!(
-            IntersectionResult::Intersect,
+            Intersection::Partial,
             c.intersect_aab(Vector3::new(0.0, 0.0, 0.0), Vector3::new(2.0, 2.0, 2.0))
         );
         assert_eq!(
-            IntersectionResult::Outside,
+            Intersection::Outside,
             c.intersect_aab(Vector3::new(1.1, 0.0, 0.0), Vector3::new(2.0, 2.0, 2.0))
         );
 
         c.update(Matrix4::identity());
 
         assert_eq!(
-            IntersectionResult::Intersect,
+            Intersection::Partial,
             c.intersect_aab(Vector3::new(0.5, 0.5, 0.5), Vector3::new(2.0, 2.0, 2.0))
         );
         assert_eq!(
-            IntersectionResult::Outside,
+            Intersection::Outside,
             c.intersect_aab(Vector3::new(1.5, 0.5, 0.5), Vector3::new(2.0, 2.0, 2.0))
         );
         assert_eq!(
-            IntersectionResult::Outside,
+            Intersection::Outside,
             c.intersect_aab(Vector3::new(-2.5, 0.5, 0.5), Vector3::new(-1.5, 2.0, 2.0))
         );
         assert_eq!(
-            IntersectionResult::Outside,
+            Intersection::Outside,
             c.intersect_aab(Vector3::new(-0.5, -2.5, 0.5), Vector3::new(1.5, -2.0, 2.0))
         );
     }
 
     #[test]
     fn test_aab_in_perspective() {
-        let c = FrustumIntersection::from_matrix4(
+        let c = FrustumCuller::from_matrix4(
             PerspectiveFov {
                 fovy: Rad(3.14159265 / 2.0),
                 aspect: 1.0,
@@ -619,19 +622,19 @@ mod tests {
         );
 
         assert_eq!(
-            IntersectionResult::Inside,
+            Intersection::Inside,
             c.intersect_aab(Vector3::new(0.0, 0.0, -7.0), Vector3::new(1.0, 1.0, -5.0))
         );
         assert_eq!(
-            IntersectionResult::Outside,
+            Intersection::Outside,
             c.intersect_aab(Vector3::new(1.1, 0.0, 0.0), Vector3::new(2.0, 2.0, 2.0))
         );
         assert_eq!(
-            IntersectionResult::Outside,
+            Intersection::Outside,
             c.intersect_aab(Vector3::new(4.0, 4.0, -3.0), Vector3::new(5.0, 5.0, -5.0))
         );
         assert_eq!(
-            IntersectionResult::Outside,
+            Intersection::Outside,
             c.intersect_aab(
                 Vector3::new(-6.0, -6.0, -2.0),
                 Vector3::new(-1.0, -4.0, -4.0)
