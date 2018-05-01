@@ -14,7 +14,7 @@ Small [frustum culling](https://en.wikipedia.org/wiki/Hidden_surface_determinati
 extern crate cgmath;
 extern crate cgmath_culling;
 
-use cgmath::{PerspectiveFov, Rad};
+use cgmath::{PerspectiveFov, Rad, Vector3};
 use cgmath_culling::{FrustumCuller, BoundingBox, Intersection};
 
 let per = PerspectiveFov { fovy: Rad(3.1415_f32 / 2.0),
